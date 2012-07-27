@@ -850,7 +850,7 @@ namespace rubinius {
 
     load_kernel(runtime);
 
-    start_signals();
+    // start_signals();
     run_file(runtime + "/loader.rbc");
 
     state->vm()->thread_state()->clear();

@@ -58,6 +58,9 @@ def build_extconf(name, opts)
     end
   end
 
+  ENV["CFLAGS"] = "#{ENV['CFLAGS']} -m32"
+  ENV["LDFLAGS"] = "#{ENV['LDFLAGS']} -m32"
+
   ENV["RBXOPT"] = opts[:env]
 
   unless opts[:deps] and opts[:deps].all? { |n| File.exists? n }

@@ -62,7 +62,9 @@
 #if SPT_TYPE == SPT_REUSEARGV
 static char *argv_start = NULL;
 static size_t argv_env_len = 0;
+#if 0
 static size_t argv_len = 0;
+#endif
 #endif
 
 #endif /* HAVE_SETPROCTITLE */
@@ -70,7 +72,8 @@ static size_t argv_len = 0;
 void
 ruby_init_setproctitle(int argc, char *argv[])
 {
-#if defined(SPT_TYPE) && SPT_TYPE == SPT_REUSEARGV
+#if 0
+/* #if defined(SPT_TYPE) && SPT_TYPE == SPT_REUSEARGV */
 	extern char **environ;
 	char *lastargv = NULL;
 	char *lastenvp = NULL;

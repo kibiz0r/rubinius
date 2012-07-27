@@ -25,7 +25,7 @@ class Configure
     @defines = []
     @config = File.join(root, "config.rb")
 
-    @host = `sh -c ./rakelib/config.guess`.chomp
+    @host = ENV['BUILD_HOST'] || `sh -c ./rakelib/config.guess`.chomp
     /([^-]+)-([^-]+)-(.*)/ =~ @host
     @cpu, @vendor, @os = $1, $2, $3
     @little_endian = false
@@ -1340,6 +1340,8 @@ module Rubinius
     :mandir         => "#{@mandir}",
     :gemsdir        => "#{@gemsdir}",
     :program_name   => "#{@program_name}",
+    :static_lib_name => "librubinius.a",
+    :shared_lib_name => "librubinius.so",
     :version        => "#{@version}",
     :libversion     => "#{@libversion}",
     :release_date   => "#{@release_date}",

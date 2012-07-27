@@ -16,6 +16,7 @@ require 'digest/sha1'
 require 'projects/daedalus/dependency_grapher'
 require 'rakelib/instruction_parser'
 require 'thread'
+require 'fileutils'
 
 module Daedalus
 
@@ -212,7 +213,8 @@ module Daedalus
       when /darwin/
         # on Unix we need a g++ link, not gcc.
         # Ff line contributed by Daniel Harple.
-        @ldshared = "#{@linker} -bundle -undefined suppress -flat_namespace -lstdc++"
+        # @ldshared = "#{@linker} -shared -undefined suppress -flat_namespace -lstdc++ -m32"
+        @ldshared = "#{@linker} -bundle -undefined dynamic_lookup -flat_namespace -lstdc++ -m32"
 
       when /aix/
         @ldshared = "#{@linker} -shared -Wl,-G -Wl,-brtl"
@@ -272,10 +274,10 @@ module Daedalus
       @log.command "#{@linker} -o #{path} #{files.join(' ')} #{@libraries.join(' ')} #{@ldflags.join(' ')}"
     end
 
-    def ar(library, objects)
-      @log.show "AR", library
-      @log.command "ar rv #{library} #{objects.join(' ')}"
-      @log.command "ranlib #{library}"
+    def ar(library, objects, flags="rv", ranlib=true, log=true)
+      @log.show "AR", library if log
+      @log.command "ar #{flags} #{library} #{objects.join(' ')}"
+      @log.command "ranlib #{library}" if ranlib
     end
 
     def ldshared(library, objects)
@@ -818,6 +820,42 @@ module Daedalus
     end
   end
 
+  class SharedLibTarget < Program
+    # def build(ctx)
+    #   ctx.log.inc!
+    #   ctx.ldshared @path, objects
+    # end
+  end
+
+  class StaticLibTarget < Program
+    def build(ctx)
+      ctx.log.inc!
+      dir = Dir.mktmpdir
+      files = objects.dup
+      files.each_with_index do |f,i|
+        if f.end_with? '.a'
+          archive = File.expand_path(f)
+          archdir = File.join(dir, File.basename(archive))
+          FileUtils.mkdir_p archdir
+          FileUtils.cd archdir do
+            ctx.ar archive, [], "x", false, false
+          end
+          files[i] = Dir.entries(archdir).find_all { |p| p =~ /.*\.o$/ }
+
+          # Special-case hack: don't include the object file which corresponds
+          # to vendor/oniguruma/enc/mktable.c, as it defines _main.
+          files[i].reject! { |fn| fn == "mktable.c.o" } if File.basename(archive) == "libonig.a"
+
+          files[i].map! { |fn| '"' + File.join(archdir, fn) + '"' }
+        end
+      end
+      files.flatten!
+
+      ctx.ar @path, files
+      FileUtils.remove_entry_secure dir
+    end
+  end
+
   class Tasks
     def initialize
       @pre = []
@@ -957,6 +995,18 @@ module Daedalus
 
     def library_group(path, &block)
       LibraryGroup.new(path, @compiler, &block)
+    end
+
+    def shared_library(name, *files)
+      lib = SharedLibTarget.new(name, files)
+      @programs << lib
+      lib
+    end
+
+    def static_library(name, *files)
+      lib = StaticLibTarget.new(name, files)
+      @programs << lib
+      lib
     end
 
     def gcc!

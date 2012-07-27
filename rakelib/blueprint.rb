@@ -55,7 +55,7 @@ Daedalus.blueprint do |i|
     # slightly faster), but 4.3 does not support it.
     # TODO: Look for workarounds.
     unless `gcc -v 2>&1` =~ /gcc version 4\.3/i
-      gcc.cflags << "-mdynamic-no-pic"
+      # gcc.cflags << "-mdynamic-no-pic"
     end
   end
 
@@ -121,7 +121,7 @@ Daedalus.blueprint do |i|
     g.depends_on "config.h", "configure"
 
     gcc.cflags << "-Ivendor/oniguruma"
-    g.cflags = ["-DHAVE_CONFIG_H", "-I.", "-I../../vm/capi/19/include"]
+    g.cflags = ["-DHAVE_CONFIG_H", "-m32", "-I.", "-I../../vm/capi/19/include"]
 
     g.static_library "libonig" do |l|
       l.source_files "*.c", "enc/*.c"
@@ -194,16 +194,7 @@ Daedalus.blueprint do |i|
     end
   end
 
-  case Rubinius::BUILD_CONFIG[:llvm]
-  when :prebuilt, :svn
-    llvm = i.external_lib "vendor/llvm" do |l|
-      l.cflags = ["-Ivendor/llvm/include"]
-      l.objects = []
-    end
-
-    gcc.add_library llvm
-  end
-
+  llvm_objects = nil
   case Rubinius::BUILD_CONFIG[:llvm]
   when :config, :prebuilt, :svn
     conf = Rubinius::BUILD_CONFIG[:llvm_configure]
@@ -216,12 +207,12 @@ Daedalus.blueprint do |i|
     flags << "-DENABLE_LLVM"
 
     ldflags = `#{conf} --ldflags`.strip.split(/\s+/)
-    objects = `#{conf} --libfiles`.strip.split(/\s+/)
+    llvm_objects = `#{conf} --libfiles`.strip.split(/\s+/)
 
     if Rubinius::BUILD_CONFIG[:windows]
       ldflags = ldflags.sub(%r[-L/([a-zA-Z])/], '-L\1:/')
 
-      objects.select do |f|
+      llvm_objects.select do |f|
         f.sub!(%r[^/([a-zA-Z])/], '\1:/')
         File.file? f
       end
@@ -229,12 +220,23 @@ Daedalus.blueprint do |i|
 
     gcc.cflags.concat flags
     gcc.ldflags.concat ldflags
-    gcc.ldflags.concat objects
+    gcc.ldflags.concat llvm_objects
   when :no
     # nothing, not using LLVM
   else
     STDERR.puts "Unsupported LLVM configuration: #{Rubinius::BUILD_CONFIG[:llvm]}"
     raise "get out"
+  end
+
+  llvm = nil
+  case Rubinius::BUILD_CONFIG[:llvm]
+  when :prebuilt, :svn
+    llvm = i.external_lib "vendor/llvm" do |l|
+      l.cflags = ["-Ivendor/llvm/include"]
+      l.objects = llvm_objects
+    end
+
+    gcc.add_library llvm
   end
 
   gcc.add_library zlib if Rubinius::BUILD_CONFIG[:vendor_zlib]
@@ -268,6 +270,10 @@ Daedalus.blueprint do |i|
   files << gdtoa
   files << oniguruma
   files << ltm
+  # files << llvm
+
+  i.shared_library "vm/#{Rubinius::BUILD_CONFIG[:shared_lib_name]}", *(files.dup + [llvm])
+  i.static_library "vm/#{Rubinius::BUILD_CONFIG[:static_lib_name]}", *(files.dup + [llvm])
 
   cli = files.dup
   cli << i.source_file("vm/drivers/cli.cpp")
