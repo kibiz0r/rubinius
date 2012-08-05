@@ -58,6 +58,8 @@ def build_extconf(name, opts)
     end
   end
 
+  original_cflags = ENV['CFLAGS']
+  original_ldflags = ENV['CFLAGS']
   ENV["CFLAGS"] = "#{ENV['CFLAGS']} -m32"
   ENV["LDFLAGS"] = "#{ENV['LDFLAGS']} -m32"
 
@@ -70,6 +72,8 @@ def build_extconf(name, opts)
   sh("make #{redirect}", &fail_block)
 
   ENV.delete("RBXOPT")
+  ENV['CFLAGS'] = original_cflags
+  ENV['LDFLAGS'] = original_ldflags
 end
 
 def compile_ext(name, opts={})
