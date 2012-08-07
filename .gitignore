@@ -87,4 +87,5 @@ tmtags
 doc/generated/vm
 web/doc/*/*.bak
 web/doc/*/*.new
+web/_includes/*markdown
 
