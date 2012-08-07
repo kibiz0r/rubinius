@@ -213,8 +213,7 @@ module Daedalus
       when /darwin/
         # on Unix we need a g++ link, not gcc.
         # Ff line contributed by Daniel Harple.
-        # @ldshared = "#{@linker} -shared -undefined suppress -flat_namespace -lstdc++ -m32"
-        @ldshared = "#{@linker} -bundle -undefined dynamic_lookup -flat_namespace -lstdc++ -m32"
+        @ldshared = "#{@linker} -m32 -dynamiclib -undefined dynamic_lookup -flat_namespace -lstdc++"
 
       when /aix/
         @ldshared = "#{@linker} -shared -Wl,-G -Wl,-brtl"
@@ -282,7 +281,7 @@ module Daedalus
 
     def ldshared(library, objects)
       @log.show "LDSHARED", library
-      @log.command "#{@ldshared} #{objects.join(' ')} -o #{library}"
+      @log.command "#{@ldshared} -install_name #{File.expand_path library} #{objects.join(' ')} -o #{library}"
     end
 
     def calculate_deps(path)
@@ -821,10 +820,10 @@ module Daedalus
   end
 
   class SharedLibTarget < Program
-    # def build(ctx)
-    #   ctx.log.inc!
-    #   ctx.ldshared @path, objects
-    # end
+    def build(ctx)
+      ctx.log.inc!
+      ctx.ldshared @path, objects
+    end
   end
 
   class StaticLibTarget < Program

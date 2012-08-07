@@ -41,8 +41,12 @@ namespace rubinius {
     GO(ffi_pointer).set(ontology::new_class_under(state, "Pointer", ffi));
     G(ffi_pointer)->set_object_type(state, PointerType);
 
+    // G(ffi_pointer)->set_const(state, "CURRENT_PROCESS",
+    //   Pointer::create(state, dlopen(NULL, RTLD_NOW | RTLD_GLOBAL)));
+
+    // Use RTLD_SELF instead of dlopen(NULL)
     G(ffi_pointer)->set_const(state, "CURRENT_PROCESS",
-      Pointer::create(state, dlopen(NULL, RTLD_NOW | RTLD_GLOBAL)));
+      Pointer::create(state, RTLD_SELF));
 
     G(ffi_pointer)->set_const(state, "DLSYM",
       Pointer::create(state, (void*)dlsym));

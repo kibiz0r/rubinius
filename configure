@@ -1341,7 +1341,7 @@ module Rubinius
     :gemsdir        => "#{@gemsdir}",
     :program_name   => "#{@program_name}",
     :static_lib_name => "librubinius.a",
-    :shared_lib_name => "librubinius.so",
+    :shared_lib_name => "librubinius.dylib",
     :version        => "#{@version}",
     :libversion     => "#{@libversion}",
     :release_date   => "#{@release_date}",

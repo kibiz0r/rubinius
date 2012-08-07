@@ -125,6 +125,7 @@ Daedalus.blueprint do |i|
 
     g.static_library "libonig" do |l|
       l.source_files "*.c", "enc/*.c"
+      l.sources.reject! { |sf| sf.basename == 'mktable.c' }
     end
 
     g.shared_library "enc/trans/big5"
