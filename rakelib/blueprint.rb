@@ -273,8 +273,8 @@ Daedalus.blueprint do |i|
   files << ltm
   # files << llvm
 
-  i.shared_library "vm/#{Rubinius::BUILD_CONFIG[:shared_lib_name]}", *(files.dup + [llvm])
-  i.static_library "vm/#{Rubinius::BUILD_CONFIG[:static_lib_name]}", *(files.dup + [llvm])
+  i.shared_library "#{Rubinius::BUILD_CONFIG[:prefixdir]}#{Rubinius::BUILD_CONFIG[:bindir]}/#{Rubinius::BUILD_CONFIG[:shared_lib_name]}", *(files.dup + [llvm])
+  i.static_library "#{Rubinius::BUILD_CONFIG[:prefixdir]}#{Rubinius::BUILD_CONFIG[:bindir]}/#{Rubinius::BUILD_CONFIG[:static_lib_name]}", *(files.dup + [llvm])
 
   cli = files.dup
   cli << i.source_file("vm/drivers/cli.cpp")
